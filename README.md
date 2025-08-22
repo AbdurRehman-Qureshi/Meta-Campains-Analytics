@@ -1,0 +1,2 @@
+# Meta-Campains-Analytics
+An internal tool that automatically retrieves data from the Meta Marketing API (Facebook and Instagram ads) and analyzes it for better understand the performance of our campaigns and detect trends and deviations early.
