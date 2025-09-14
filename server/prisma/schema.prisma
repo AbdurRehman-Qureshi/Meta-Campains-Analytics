@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id            String     @id @default(uuid())
+  AdAccountId   String     @unique
+  AdAccountName String
+  createdAt     DateTime   @default(now())
+  campaigns     Campaign[]
+}
+
+model Campaign {
+  id           String                @id @default(uuid())
+  clientId     String
+  campaignId   String                @unique
+  campaignName String
+  createdAt    DateTime              @default(now())
+  adSets       AdSet[]
+  client       Client                @relation(fields: [clientId], references: [id])
+  metrics      campaignLevelMetric[]
+}
+
+model AdSet {
+  id         String             @id @default(uuid())
+  campaignId String
+  adSetId    String             @unique
+  adSetName  String
+  createdAt  DateTime           @default(now())
+  ads        Ad[]
+  campaign   Campaign           @relation(fields: [campaignId], references: [id])
+  metrics    adSetLevelMetric[]
+}
+
+model Ad {
+  id        String          @id @default(uuid())
+  adSetId   String
+  adId      String          @unique
+  adName    String
+  createdAt DateTime        @default(now())
+  adSet     AdSet           @relation(fields: [adSetId], references: [id])
+  metrics   adLevelMetric[]
+}
+
+model campaignLevelMetric {
+  id             String   @id @default(uuid())
+  campaignId     String
+  createdAt      DateTime @default(now())
+  aov            Decimal
+  cpm            Decimal
+  impressions    Int
+  learning_phase Boolean
+  mer            Decimal
+  revenue        Decimal
+  roas           Decimal
+  spend          Decimal
+  campaign       Campaign @relation(fields: [campaignId], references: [id])
+}
+
+model adSetLevelMetric {
+  id            String   @id @default(uuid())
+  adSetId       String
+  createdAt     DateTime @default(now())
+  atc           Int
+  atcValue      Decimal
+  cpa           Decimal
+  cpatc         Decimal
+  cpc           Decimal
+  cpic          Decimal
+  ctrAll        Float
+  ctrLink       Float
+  frequency     Float
+  ic            Int
+  icValue       Decimal
+  impressions   Int
+  linkClicks    Int
+  lpv           Int
+  lpvRate       Float
+  purchaseValue Decimal
+  purchases     Int
+  reach         Int
+  roas          Decimal
+  adSet         AdSet    @relation(fields: [adSetId], references: [id])
+}
+
+model adLevelMetric {
+  id               String   @id @default(uuid())
+  adId             String
+  createdAt        DateTime @default(now())
+  atc              Int
+  ctrAll           Float
+  ctrLink          Float
+  fatigueFlag      Boolean
+  ic               Int
+  impressions      Int
+  lpvRate          Float
+  purchases        Int
+  thumb_stop_ratio Float
+  ad               Ad       @relation(fields: [adId], references: [id])
+}
