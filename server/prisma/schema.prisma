@@ -8,11 +8,18 @@ datasource db {
 }
 
 model Client {
-  id            String     @id @default(uuid())
-  AdAccountId   String     @unique
+  id            String         @id @default(uuid())
+  AdAccountId   String         @unique
   AdAccountName String
-  createdAt     DateTime   @default(now())
+  category      ClientCategory?
+  createdAt     DateTime       @default(now())
   campaigns     Campaign[]
+  metrics       clientLevelMetric[]
+}
+
+enum ClientCategory {
+  ECOMMERCE
+  LEADS
 }
 
 model Campaign {
@@ -47,10 +54,34 @@ model Ad {
   metrics   adLevelMetric[]
 }
 
+model clientLevelMetric {
+  id             String  @id @default(uuid())
+  clientId       String
+  createdAt      DateTime @default(now())
+  week           Int
+  bb             Decimal
+  cpm            Decimal
+  ctra           Decimal
+  ctrl           Decimal
+  catc           Decimal
+  cgb            Decimal
+  cpa            Decimal
+  roas           Decimal
+  aov            Decimal
+  leads          Int
+  cpl            Decimal
+  client         Client  @relation(fields: [clientId], references: [id])
+  
+  summaries ClientSummary[]
+
+  @@unique([clientId, createdAt])
+}
+
 model campaignLevelMetric {
   id             String   @id @default(uuid())
   campaignId     String
   createdAt      DateTime @default(now())
+  week           Int
   aov            Decimal
   cpm            Decimal
   impressions    Int
@@ -60,12 +91,17 @@ model campaignLevelMetric {
   roas           Decimal
   spend          Decimal
   campaign       Campaign @relation(fields: [campaignId], references: [id])
+
+  summaries CampaignSummary[]
+
+  @@unique([campaignId, createdAt])
 }
 
 model adSetLevelMetric {
   id            String   @id @default(uuid())
   adSetId       String
   createdAt     DateTime @default(now())
+  week          Int
   atc           Int
   atcValue      Decimal
   cpa           Decimal
@@ -86,12 +122,17 @@ model adSetLevelMetric {
   reach         Int
   roas          Decimal
   adSet         AdSet    @relation(fields: [adSetId], references: [id])
+
+  summaries AdSetSummary[]
+
+  @@unique([adSetId, createdAt])
 }
 
 model adLevelMetric {
   id               String   @id @default(uuid())
   adId             String
   createdAt        DateTime @default(now())
+  week             Int
   atc              Int
   ctrAll           Float
   ctrLink          Float
@@ -102,4 +143,71 @@ model adLevelMetric {
   purchases        Int
   thumb_stop_ratio Float
   ad               Ad       @relation(fields: [adId], references: [id])
+
+  summaries AdSummary[]
+
+  @@unique([adId, createdAt])
+}
+
+enum SummaryStatus {
+  pending
+  in_progress
+  completed
+  failed
+}
+
+model ClientSummary {
+  id         String      @id @default(uuid())
+  clientId   String
+  createdAt  DateTime
+  summary    String?
+  status     SummaryStatus  @default(pending)
+  retryCount Int            @default(0)
+  lastAttempt DateTime      @default(now())
+
+  clientMetric clientLevelMetric @relation(fields: [clientId, createdAt], references: [clientId, createdAt])
+  
+  @@unique([clientId, createdAt])
+}
+
+model CampaignSummary {
+  id          String        @id @default(uuid())
+  campaignId  String
+  createdAt   DateTime
+  summary     String?
+  status      SummaryStatus @default(pending)
+  retryCount  Int           @default(0)
+  lastAttempt DateTime      @default(now())
+
+  campaignMetric campaignLevelMetric @relation(fields: [campaignId, createdAt], references: [campaignId, createdAt])
+
+  @@unique([campaignId, createdAt])
+}
+
+model AdSetSummary {
+  id          String        @id @default(uuid())
+  adSetId     String
+  createdAt   DateTime
+  summary     String?
+  status      SummaryStatus @default(pending)
+  retryCount  Int           @default(0)
+  lastAttempt DateTime      @default(now())
+
+  adSetMetric adSetLevelMetric @relation(fields: [adSetId, createdAt], references: [adSetId, createdAt])
+
+  @@unique([adSetId, createdAt])
+}
+
+model AdSummary {
+  id          String        @id @default(uuid())
+  adId        String
+  createdAt   DateTime
+  summary     String?
+  status      SummaryStatus @default(pending)
+  retryCount  Int           @default(0)
+  lastAttempt DateTime      @default(now())
+
+  adMetric adLevelMetric @relation(fields: [adId, createdAt], references: [adId, createdAt])
+
+  @@unique([adId, createdAt])
 }

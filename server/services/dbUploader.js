@@ -5,32 +5,82 @@ async function uploadMetaInsightsToDB() {
   try {
     const { clientsArr, campaignsArr, adSetsArr, adsArr } = await pullMetaInsights();
 
+
     console.log("Uploading to database...");
 
     // ---------------- Clients ----------------
     if (clientsArr.length > 0 && clientsArr) {  // Add here undefined check condition later if needed
       for (const client of clientsArr) {
-        await prisma.client.upsert({
+        const createdClient = await prisma.client.upsert({
           where: { AdAccountId: client.account_id },
           update: { AdAccountName: client.account_name },
           create: {
             AdAccountId: client.account_id,
             AdAccountName: client.account_name,
+            category: client.category ?? "LEADS",
+          },
+        });
+
+        // Find last week for this client
+        const lastMetric = await prisma.clientLevelMetric.findFirst({
+          where: { clientId: createdClient.id },
+          orderBy: { week: "desc" },
+        });
+        const week = lastMetric ? lastMetric.week + 1 : 1;
+        
+
+        const metric = await prisma.clientLevelMetric.create({
+          data: {
+            clientId: createdClient.id,
+            week,
+            bb: client.spend,
+            cpm: client.cpm,
+            ctra: client.ctr_all,
+            ctrl: client.ctrl,
+            catc: client.catc,
+            cgb: client.cgb,
+            cpa: client.cpa,
+            roas: client.roas,
+            aov: client.aov,
+            leads: client.leads,
+            cpl: client.cpl,
+          },
+        });
+
+        await prisma.clientSummary.upsert({
+          where: {
+            clientId_createdAt: {
+              clientId: createdClient.id,
+              createdAt: metric.createdAt,
+            },
+          },
+          update: {},
+          create: {
+            summary: null,
+            status: "pending",
+            retryCount: 0,
+            lastAttempt: new Date(),
+            clientMetric: {
+              connect: {
+                clientId_createdAt: {
+                  clientId: createdClient.id,
+                  createdAt: metric.createdAt,
+                }
+              }
+            }
           },
         });
       }
-      console.log(`Upserted ${clientsArr.length} clients.`);
+      console.log(`Inserted ${clientsArr.length} clients + metrics + summaries.`);
     } else {
-      console.log("Client array is empty or undefined, nothing to upload.");
+      console.log("Client array is empty or undefined, nothing to upload at client level");
       return;
     }
 
-    // ---------------- Campaigns + Metrics ----------------
+    // ---------------- Campaigns + Metrics + Summary ----------------
     if (campaignsArr.length > 0 && campaignsArr) {
       for (const campaign of campaignsArr) {
-        
         const client = clientsArr.find((c) => c.account_id === campaign.account_id);
-        console.log("Found client for campaign:", client);
         if (!client) {
           console.error(`No client found for campaign ${campaign.campaign_id}`);
           continue;
@@ -47,10 +97,17 @@ async function uploadMetaInsightsToDB() {
           },
         });
 
+        const lastMetrics = await prisma.campaignLevelMetric.findFirst({
+          where: {campaignId: createdCampaign.id},
+          orderBy: { createdAt: 'desc' },
+        });
+        const week = lastMetrics ? lastMetrics.week + 1 : 1;
+
         // Insert metrics snapshot
-        await prisma.campaignLevelMetric.create({
+        const metric = await prisma.campaignLevelMetric.create({
           data: {
             campaignId: createdCampaign.id,
+            week,
             aov: campaign.aov ?? 0,
             cpm: campaign.cpm ?? 0,
             impressions: campaign.impressions ?? 0,
@@ -61,16 +118,41 @@ async function uploadMetaInsightsToDB() {
             spend: campaign.spend ?? 0,
           },
         });
- 
-      }
 
-      console.log(`Inserted ${campaignsArr.length} campaign records + metrics.`);
+        // Insert or upsert summary row
+        await prisma.campaignSummary.upsert({
+          where: {
+            campaignId_createdAt: {
+              campaignId: createdCampaign.id,
+              createdAt: metric.createdAt,
+            },
+          },
+          update: {},
+          create: {
+            // campaignId: createdCampaign.id,
+            // createdAt: metric.createdAt,
+            summary: null,
+            status: "pending",
+            retryCount: 0,
+            lastAttempt: new Date(),
+            campaignMetric: {
+              connect: {
+                campaignId_createdAt: {
+                  campaignId: createdCampaign.id,
+                  createdAt: metric.createdAt,
+                }
+              }
+            }
+          },
+        });
+      }
+      console.log(`Inserted ${campaignsArr.length} campaign records + metrics + summaries.`);
     } else {
       console.log("campaign array is empty or undefined, nothing to upload.");
       return;
     }
 
-    // ---------------- AdSets + Metrics ----------------
+    // ---------------- AdSets + Metrics + Summary ----------------
     if (adSetsArr.length > 0 && adSetsArr) {
       for (const adset of adSetsArr) {
         // Ensure adSet exists
@@ -84,10 +166,18 @@ async function uploadMetaInsightsToDB() {
           },
         });
 
+        const lastMetric = await prisma.adSetLevelMetric.findFirst({
+            where: { adSetId: createdAdSet.id },
+            orderBy: { week: "desc" },
+          });
+
+        const week = lastMetric ? lastMetric.week + 1 : 1;
+
         // Insert metrics snapshot
-        await prisma.adSetLevelMetric.create({
+        const metric = await prisma.adSetLevelMetric.create({
           data: {
             adSetId: createdAdSet.id,
+            week,
             atc: adset.atc ?? 0,
             atcValue: adset.atc_value ?? 0,
             cpa: adset.cpa ?? 0,
@@ -109,14 +199,41 @@ async function uploadMetaInsightsToDB() {
             roas: adset.roas ?? 0,
           },
         });
+
+        // Insert or upsert summary row
+        await prisma.adSetSummary.upsert({
+          where: {
+            adSetId_createdAt: {
+              adSetId: createdAdSet.id,
+              createdAt: metric.createdAt,
+            },
+          },
+          update: {},
+          create: {
+            // adSetId: createdAdSet.id,
+            // createdAt: metric.createdAt,
+            summary: null,
+            status: "pending",
+            retryCount: 0,
+            lastAttempt: new Date(),
+            adSetMetric: {
+              connect: {
+                adSetId_createdAt: {
+                adSetId: createdAdSet.id,
+                createdAt: metric.createdAt,
+              }
+              }
+            }
+          },
+        });
       }
-      console.log(`Inserted ${adSetsArr.length} ad set records + metrics.`);
+      console.log(`Inserted ${adSetsArr.length} ad set records + metrics + summaries.`);
     } else {
       console.log("Adset array is empty or undefined, nothing to upload.");
       return;
     }
 
-    // ---------------- Ads + Metrics ----------------
+    // ---------------- Ads + Metrics + Summary ----------------
     if (adsArr.length > 0 && adsArr) {
       for (const ad of adsArr) {
         // Ensure Ad exists
@@ -130,10 +247,17 @@ async function uploadMetaInsightsToDB() {
           },
         });
 
+        const lastMetric = await prisma.adLevelMetric.findFirst({
+            where: { adId: createdAd.id },
+            orderBy: { week: "desc" },
+          });
+          const week = lastMetric ? lastMetric.week + 1 : 1;
+
         // Insert metrics snapshot
-        await prisma.adLevelMetric.create({
+        const metric = await prisma.adLevelMetric.create({
           data: {
             adId: createdAd.id,
+            week,
             atc: ad.atc ?? 0,
             ctrAll: ad.ctr_all ?? 0,
             ctrLink: ad.ctr_link ?? 0,
@@ -142,11 +266,38 @@ async function uploadMetaInsightsToDB() {
             impressions: ad.impressions ?? 0,
             lpvRate: ad.lpv_rate ?? 0,
             purchases: ad.purchases ?? 0,
-            thumb_stop_ratio: ad.thumb_stop_ratio ?? 0,
+            thumb_stop_ratio: isNaN(ad.thumb_stop_ratio) ? 0 : ad.thumb_stop_ratio,
+          },
+        });
+
+        // Insert or upsert summary row
+        await prisma.adSummary.upsert({
+          where: {
+            adId_createdAt: {
+              adId: createdAd.id,
+              createdAt: metric.createdAt,
+            },
+          },
+          update: {},
+          create: {
+            // adId: createdAd.id,
+            // createdAt: metric.createdAt,
+            summary: null,
+            status: "pending",
+            retryCount: 0,
+            lastAttempt: new Date(),
+            adMetric: {
+              connect: {
+                adId_createdAt: {
+                  adId: createdAd.id,
+                  createdAt: metric.createdAt,
+                }
+              }
+            }
           },
         });
       }
-      console.log(`Inserted ${adsArr.length} ad records + metrics.`);
+      console.log(`Inserted ${adsArr.length} ad records + metrics + summaries.`);
     } else {
       console.log("Ad array is empty or undefined, nothing to upload.");
       return;
@@ -159,3 +310,7 @@ async function uploadMetaInsightsToDB() {
 }
 
 module.exports = uploadMetaInsightsToDB;
+
+
+
+
