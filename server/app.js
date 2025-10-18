@@ -17,10 +17,25 @@ app.use(require('cors')());
 // processSummaries('campaign', 5);
 // processSummaries('adset', 5);
 // processSummaries('ad', 5);
-processSummaries('client', 5);
+// processSummaries('client', 5);
 // pullMondayBoardData(process.env.BOARD_ID);
 
 
-// // const clientsRouter = require('./routes/clients');
-// app.use('/api/clients', clientsRouter);
-app.listen(5000, () => console.log('Server running on port 5000'));
+ const clientsRouter = require('./routes/clients');
+app.use('/api/clients', clientsRouter);
+const server = app.listen(5000, () => console.log('Server running on port 5000'));
+
+// Gracefully disconnect Prisma on server shutdown
+const prisma = require('./config/prismaClient').default;
+
+const shutdown = async () => {
+  console.log('Shutting down server...');
+  await prisma.$disconnect();
+  server.close(() => {
+    console.log('Server closed.');
+    process.exit(0);
+  });
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

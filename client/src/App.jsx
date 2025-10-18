@@ -1,16 +1,40 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Sidebar from './components/Sidebar';
+import AnalyticsCard from './components/AnalyticsCard';
+import ClientLevel from './pages/ClientsLevelScreen';
+import ClientDetails from './pages/ClientDetailScreen';
+import AddClient from './pages/AddClient';
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [category, setCategory] = useState("ECOMMERCE");
 
   return (
-    <>
-      <h1>Meta Campaigns Dashboard</h1>
-    </>
+    <Router>
+      <div className="flex min-h-screen h-screen bg-[#0f1116] text-white">
+        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} setCategory={setCategory} />
+        <main className="flex-1 p-6 pt-20 h-screen overflow-y-auto">
+          <div className="md:hidden flex justify-between items-center mb-6">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="text-2xl px-3 py-2 rounded bg-[#1a1d24] text-white"
+            >
+              ☰
+            </button>
+          </div>
+          <Routes>
+            <Route path="/" element={<></>} />
+            <Route path="/client-level" element={<ClientLevel category={category} />} />
+            <Route path="/client/:clientId/:category" element={<ClientDetails />} />
+            <Route path="/add-client" element={<AddClient />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   )
 }
 
 export default App
+

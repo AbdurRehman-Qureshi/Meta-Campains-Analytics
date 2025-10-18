@@ -13,11 +13,11 @@ async function uploadMetaInsightsToDB() {
       for (const client of clientsArr) {
         const createdClient = await prisma.client.upsert({
           where: { AdAccountId: client.account_id },
-          update: { AdAccountName: client.account_name },
+          update: { AdAccountName: client.account_name, category: client.adAccountCategory },
           create: {
             AdAccountId: client.account_id,
             AdAccountName: client.account_name,
-            category: client.category ?? "LEADS",
+            category: client.adAccountCategory,
           },
         });
 

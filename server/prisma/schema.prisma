@@ -7,6 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model AdAccounts {
+  id            String        @id @default(uuid())
+  AdAccountId   String        @unique
+  AdAccountName String
+  category      ClientCategory?
+  createdAt     DateTime      @default(now())         
+}
+
 model Client {
   id            String         @id @default(uuid())
   AdAccountId   String         @unique
