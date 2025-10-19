@@ -43,13 +43,38 @@ async function processSummaries(level, batchSize = 5) {
 
   for (const row of candidates) {
     // fetch metrics snapshot from metrics table
-    let metrics;
-    if (level === "client") {
-        metrics = await prisma.clientLevelMetric.findFirst({
+    let currentMetrics, previousMetrics;
+
+      // --- CLIENT LEVEL ---
+      if (level === "client") {
+        currentMetrics = await prisma.clientLevelMetric.findFirst({
           where: { clientId: row.clientId, createdAt: row.createdAt },
         });
-        if (metrics) await generateSummary(level, row.clientId, metrics);
-    } else if (level === "campaign") {
+
+        if (currentMetrics) {
+          // Find previous week’s metrics by week number or earlier createdAt
+          previousMetrics = await prisma.clientLevelMetric.findFirst({
+            where: {
+              clientId: row.clientId,
+              week: { lt: currentMetrics.week },
+            },
+            orderBy: { week: "desc" },
+          });
+
+          // If no previous data found (new client)
+          if (!previousMetrics) {
+            previousMetrics = Object.keys(currentMetrics).reduce((acc, key) => {
+              acc[key] = 0;
+              return acc;
+            }, {});
+          }
+
+          await generateSummary(level, row.clientId, {
+            currentMetrics,
+            previousMetrics,
+          });
+        }
+      } else if (level === "campaign") {
       metrics = await prisma.campaignLevelMetric.findFirst({
         where: { campaignId: row.campaignId, createdAt: row.createdAt },
       });

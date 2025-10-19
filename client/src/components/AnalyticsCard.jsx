@@ -1,6 +1,6 @@
 import React from "react";
 
-const AnalyticsCard = ({ title, metrics, summary, category, width = 300, height = 350 }) => {
+const AnalyticsCard = ({ title, metrics, summary, category, width = 445, height = 350 }) => {
   const metricLabels = category === "LEADS"
     ? [
         { key: "bb", label: "BB" },
@@ -71,10 +71,15 @@ const AnalyticsCard = ({ title, metrics, summary, category, width = 300, height 
               }}
             >
               {metrics && metrics[metric.key]
-                ? (metric.key === "bb" || metric.key === "leads"
-                    ? metrics[metric.key].value ?? "-"
-                    : metrics[metric.key].change ?? "-")
-                : "-"}
+               ? metric.key === "bb"
+                 ? (metrics[metric.key].value !== undefined
+                     ? parseFloat(metrics[metric.key].value).toFixed(2)
+                     : "-")
+                 : metric.key === "leads"
+                 ? (metrics[metric.key].value ?? "-")
+                 : (metrics[metric.key].change ?? "-")
+               : "-"}
+             
             </span>
           </div>
         ))}
