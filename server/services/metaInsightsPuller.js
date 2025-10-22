@@ -26,8 +26,8 @@ async function pullMetaInsights() {
             access_token: process.env.ACCESS_TOKEN,
             // date_preset: 'maximum',
             time_range: JSON.stringify({
-              since: '2025-10-08',
-              until: '2025-10-14',
+              since: '2025-10-13',
+              until: '2025-10-19',
             }),
             level,
             fields,
@@ -67,6 +67,7 @@ async function pullMetaInsights() {
     async function handleAccount(acc) {
       const adAccountId = acc.AdAccountId;
       const adAccountCategory = acc.category;
+      const adAccountName = acc.AdAccountName;
 
       // Fetch all levels for this account in parallel
       const [accountInsights, campaignInsights, adsetInsights, adInsights] =
@@ -90,7 +91,7 @@ async function pullMetaInsights() {
 
         clientsArr.push({
           account_id: accInsight.account_id,
-          account_name: accInsight.account_name,
+          account_name: adAccountName,
           adAccountCategory,
           spend,
           impressions,
