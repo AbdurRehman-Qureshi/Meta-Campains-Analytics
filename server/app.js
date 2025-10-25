@@ -1,8 +1,10 @@
 const express = require('express');
-const uploadMetaInsightsToDB = require('./services/dbUploader');
+// const uploadMetaInsightsToDB = require('./services/dbUploader');
+const uploadMetaInsightsToDB = require('./services/dbUploader1');
 const pullMondayBoardData = require('./services/mondayLogsPuller');
 const metaInsightsPuller = require('./services/metaInsightsPuller');
-const { processSummaries } = require('./jobs/processSummaries');
+// const { processSummaries } = require('./jobs/processSummaries');
+const { processSummaries } = require('./jobs/processSummaries1');
 require('dotenv').config();
 const app = express();
 app.use(express.json());
@@ -10,7 +12,7 @@ app.use(require('cors')());
 
 
 
-// uploadMetaInsightsToDB();
+uploadMetaInsightsToDB();
 
 // metaInsightsPuller();  commenting it out to avoid double pulling
 // uploadMetaInsightsToDB();

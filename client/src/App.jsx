@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Sidebar from './components/Sidebar';
-import AnalyticsCard from './components/AnalyticsCard';
-import ClientLevel from './pages/ClientsLevelScreen';
-import ClientDetails from './pages/ClientDetailScreen';
+// import ClientLevel from './pages/ClientsLevelScreen';
+// import ClientDetails from './pages/ClientDetailScreen';
+import ClientLevel from './pages/CLS1';
+import ClientDetails from './pages/CDS';
 import AddClient from './pages/AddClient';
 import './App.css'
 
@@ -15,7 +16,7 @@ function App() {
     <Router>
       <div className="flex min-h-screen h-screen bg-[#0f1116] text-white">
         <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} setCategory={setCategory} />
-        <main className="flex-1 p-6 pt-20 h-screen overflow-y-auto">
+        <main className="flex-1 p-6 pt-20 h-screen overflow-y-auto bg-[#0b0b0f]">
           <div className="md:hidden flex justify-between items-center mb-6">
             <button
               onClick={() => setIsSidebarOpen(true)}

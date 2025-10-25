@@ -89,6 +89,15 @@ function chunkArray(array, size) {
   return result;
 }
 
+// Helper to format ISO week numeric key -> label
+function formatIsoKeyLabel(key) {
+  if (!key) return "";
+  const k = Number(key);
+  const year = Math.floor(k / 100);
+  const week = k % 100;
+  return `${year}-W${String(week).padStart(2, "0")}`;
+}
+
 const GraphSection = ({ metrics, graphData, height = 300 }) => {
   const metricPairs = chunkArray(metrics, 2);
 
@@ -100,10 +109,12 @@ const GraphSection = ({ metrics, graphData, height = 300 }) => {
             const found = graphData.find(
               (item) => item.name.toLowerCase() === metric.toLowerCase()
             );
+
+            // found.data now contains objects: { week, value }
             const data = found
-              ? found.data.map((value, idx) => ({
-                  name: `Week ${idx + 1}`,
-                  value,
+              ? found.data.map((pt) => ({
+                  name: formatIsoKeyLabel(pt.week), // use ISO week labels
+                  value: pt.value,
                 }))
               : [];
 
@@ -113,7 +124,6 @@ const GraphSection = ({ metrics, graphData, height = 300 }) => {
                 className="rounded-xl shadow-lg flex flex-col items-center flex-1"
                 style={{
                   background: "transparent",
-                  // border: "1px solid #222",
                   height: `${height}px`,
                   color: "#f2f2f2",
                   fontFamily: "Inter, sans-serif",
@@ -124,62 +134,20 @@ const GraphSection = ({ metrics, graphData, height = 300 }) => {
                   justifyContent: "center",
                 }}
               >
-                <div
-                  className="w-full flex justify-between items-center mb-4"
-                  style={{ minHeight: HEADER_HEIGHT }}
-                >
+                <div className="w-full flex justify-between items-center mb-4" style={{ minHeight: HEADER_HEIGHT }}>
                   <span className="text font-semibold" style={{ color: "#f2f2f2" }}>
                     {metric} per Week
                   </span>
-                  {/* <span
-                    className="text-sm font-medium"
-                    style={{
-                      background: "#d4ac68",
-                      color: "#090B0CFA",
-                      borderRadius: "6px",
-                      padding: "4px 12px",
-                    }}
-                  >
-                    5% Profit
-                  </span> */}
                 </div>
-                <div
-                  style={{
-                    flex: 1,
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
+                <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {data.length > 0 ? (
-                    <ResponsiveContainer
-                      width="100%"
-                      height={height - HEADER_HEIGHT - 48}
-                    >
-                      <LineChart
-                        data={data}
-                        margin={{ top: 0, right: 0, left: -20, bottom: 0 }} // Remove all margins
-                      >
+                    <ResponsiveContainer width="100%" height={height - HEADER_HEIGHT - 48}>
+                      <LineChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                         <CartesianGrid stroke="#222" strokeDasharray="3 3" />
                         <XAxis dataKey="name" tick={{ fill: "#f2f2f2", fontSize: 12 }} />
                         <YAxis tick={{ fill: "#f2f2f2", fontSize: 12 }} />
-                        <Tooltip
-                          contentStyle={{
-                            background: "#222",
-                            border: "none",
-                            borderRadius: "8px",
-                            color: "#f2f2f2",
-                            fontSize: "12px",
-                          }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="value"
-                          stroke="#d4ac68"
-                          strokeWidth={3}
-                          dot={{ r: 5, fill: "#d4ac68" }}
-                        />
+                        <Tooltip contentStyle={{ background: "#222", border: "none", borderRadius: "8px", color: "#f2f2f2", fontSize: "12px" }} />
+                        <Line type="monotone" dataKey="value" stroke="#d4ac68" strokeWidth={3} dot={{ r: 5, fill: "#d4ac68" }} />
                       </LineChart>
                     </ResponsiveContainer>
                   ) : (
@@ -189,9 +157,6 @@ const GraphSection = ({ metrics, graphData, height = 300 }) => {
               </div>
             );
           })}
-          {pair.length === 1 && (
-            <div className="flex-1" />
-          )}
         </div>
       ))}
     </div>

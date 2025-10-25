@@ -1,6 +1,6 @@
 import React from "react";
 
-const AnalyticsCard = ({ title, metrics, summary, category, width = 445, height = 350 }) => {
+const AnalyticsCard = ({ title, metrics, summary, category, width = 450, height = 350 }) => {
   const metricLabels = category === "LEADS"
     ? [
         { key: "bb", label: "BB" },
@@ -26,7 +26,7 @@ const AnalyticsCard = ({ title, metrics, summary, category, width = 445, height 
     <div
       className="rounded-xl shadow-lg flex flex-col justify-between"
       style={{
-        // background: "#090B0CFA",
+        background: "#0f1112",
         width,
         minWidth: width,
         maxWidth: width,
@@ -54,9 +54,9 @@ const AnalyticsCard = ({ title, metrics, summary, category, width = 445, height 
             className="flex flex-col "
             style={{ minWidth: "52px" }}
           >
-            <span className="text-sm text-[#f2f2f2] font-sm mb-2">{metric.label}</span>
+            <span className="text-[12px] text-[#f2f2f2] font-sm mb-2">{metric.label}</span>
             <span
-              className="font-sm text-sm"
+              className="font-sm text-[12px]"
               style={{
                 color:
                   metric.key === "bb" || metric.key === "leads"

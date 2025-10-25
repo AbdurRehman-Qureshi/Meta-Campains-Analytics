@@ -36,12 +36,59 @@ async function pullMetaInsights() {
         }
       );
       return response.data.data || [];
+
+      // try {
+      //   const response = await axios.get(
+      //     `https://graph.facebook.com/v19.0/act_${accountId}/insights`,
+      //     {
+      //       params: {
+      //         access_token: process.env.ACCESS_TOKEN,
+      //         date_preset: 'maximum',
+      //         level,
+      //         fields,
+      //         limit: 50,
+      //       },
+      //     }
+      //   );
+      //   console.log(`   ✅ [${level}] Insights fetched for account ${accountId} (${response.data.data?.length || 0} records)`);
+      //   return response.data.data || [];
+      // } catch (err) {
+      //   const message = err.response?.data?.error?.message || err.message;
+      //   console.error(`   ⚠️ [${level}] Failed for account ${accountId}: ${message}`);
+      //   return [];
+      // }
     }
 
-    function getActionValue(actions, type) {
-      const a = actions?.find((x) => x.action_type === type);
-      return a ? parseFloat(a.value) : 0;
+    function getActionCountCombined(actions, types) {
+      if (!actions) return 0;
+    
+      // Try to find any omni_ type among provided types
+      const omniType = types.find(t => t.startsWith('omni_'));
+      const omni = omniType && actions.find(x => x.action_type === omniType);
+      if (omni) return parseFloat(omni.value);
+    
+      // Otherwise, sum up matching legacy types
+      return types.reduce((sum, type) => {
+        const a = actions.find(x => x.action_type === type);
+        return sum + (a ? parseFloat(a.value) : 0);
+      }, 0);
     }
+
+    function getActionValueCombined(actionValues, types) {
+      if (!actionValues) return 0;
+    
+      // Try to find any omni_ type among provided types
+      const omniType = types.find(t => t.startsWith('omni_'));
+      const omni = omniType && actionValues.find(x => x.action_type === omniType);
+      if (omni) return parseFloat(omni.value);
+    
+      // Otherwise, sum up matching legacy types
+      return types.reduce((sum, type) => {
+        const a = actionValues.find(x => x.action_type === type);
+        return sum + (a ? parseFloat(a.value) : 0);
+      }, 0);
+    }
+
 
     // Helper: Process in batches
     async function processInBatches(items, batchSize, handler) {
@@ -72,22 +119,74 @@ async function pullMetaInsights() {
       // Fetch all levels for this account in parallel
       const [accountInsights, campaignInsights, adsetInsights, adInsights] =
         await Promise.all([
-          fetchInsights(adAccountId, 'account', 'account_id,account_name,spend,impressions,ctr,actions,inline_link_clicks'),
+          fetchInsights(adAccountId, 'account', 'account_id,account_name,spend,impressions,ctr,actions,action_values,inline_link_clicks'),
           fetchInsights(adAccountId, 'campaign', 'account_id,campaign_id,campaign_name,spend,impressions,ctr,actions,purchase_roas,reach'),
           fetchInsights(adAccountId, 'adset', 'campaign_id,adset_id,adset_name,impressions,reach,frequency,ctr,actions,spend,clicks,inline_link_clicks'),
           fetchInsights(adAccountId, 'ad', 'campaign_id,adset_id,ad_id,ad_name,impressions,ctr,actions,spend,inline_link_clicks'),
         ]);
 
+      //       // 👇 Log to inspect data from Meta
+      // console.log(`\n===== RAW INSIGHTS for account ${adAccountId} =====`);
+      // console.log(JSON.stringify(accountInsights, null, 2));
+
       // Account-level
       for (const accInsight of accountInsights) {
-        const addToCart = getActionValue(accInsight.actions, 'add_to_cart');
-        const initiateCheckout = getActionValue(accInsight.actions, 'initiate_checkout');
-        const purchases = getActionValue(accInsight.actions, 'purchase');
-        const purchaseValue = getActionValue(accInsight.actions, 'purchase_value');
-        const leads = getActionValue(accInsight.actions, 'lead');
+
         const spend = parseFloat(accInsight.spend || 0);
         const impressions = parseInt(accInsight.impressions || 0);
         const link_clicks = parseInt(accInsight.inline_link_clicks || 0);
+
+        const addToCartTypes = [
+          'omni_add_to_cart',
+          'add_to_cart',
+          'offsite_conversion.fb_pixel_add_to_cart'
+        ];
+
+        const leadTypes = [
+          'omni_lead',
+          'lead',
+          'offsite_conversion.fb_pixel_lead'
+        ];
+
+        const purchaseTypes = [
+          'omni_purchase',
+          'purchase',
+          'offsite_conversion.fb_pixel_purchase',
+          'onsite_web_purchase'
+        ];
+
+        const purchaseValueTypes = [
+          'omni_purchase',
+          'purchase',
+          'offsite_conversion.fb_pixel_purchase_value',
+          'onsite_web_purchase_value'
+        ];
+
+        const initiateCheckoutTypes = [
+          'omni_initiated_checkout',
+          'initiate_checkout',
+          'offsite_conversion.fb_pixel_initiate_checkout',
+          'onsite_web_initiated_checkout'
+        ];
+
+
+
+        // Works automatically for all action groups
+        const addToCart = getActionCountCombined(accInsight.actions, addToCartTypes);
+        const leads = getActionCountCombined(accInsight.actions, leadTypes);
+        const purchases = getActionCountCombined(accInsight.actions, purchaseTypes);
+        const purchaseValue = getActionValueCombined(accInsight.action_values, purchaseValueTypes);
+        const initiateCheckout = getActionCountCombined(accInsight.actions, initiateCheckoutTypes);
+
+        // Logger ----------------
+        console.log(`\n--- Account ${adAccountId} (${adAccountName}) ---`);
+        
+        console.log('Add to Cart:', addToCart);
+        console.log('Leads:', leads);
+        console.log('Purchases:', purchases);
+        console.log('Purchase Value:', purchaseValue);
+        console.log('Initiate checkout:', initiateCheckout);
+
 
         clientsArr.push({
           account_id: accInsight.account_id,
@@ -115,10 +214,24 @@ async function pullMetaInsights() {
 
       // Campaign-level
       for (const c of campaignInsights) {
-        const purchases = getActionValue(c.actions, 'purchase');
-        const purchaseValue = getActionValue(c.actions, 'purchase_value');
         const spend = parseFloat(c.spend || 0);
         const impressions = parseInt(c.impressions || 0);
+
+        const purchaseTypes = [
+          'omni_purchase',
+          'purchase',
+          'offsite_conversion.fb_pixel_purchase',
+          'onsite_web_purchase'
+        ];
+        const purchaseValueTypes = [
+          'omni_purchase',
+          'purchase',
+          'offsite_conversion.fb_pixel_purchase_value',
+          'onsite_web_purchase_value'
+        ];
+
+        const purchases = getActionCountCombined(c.actions, purchaseTypes);
+        const purchaseValue = getActionValueCombined(c.action_values, purchaseValueTypes);
 
         campaignsArr.push({
           account_id: c.account_id,
@@ -137,13 +250,26 @@ async function pullMetaInsights() {
 
       // Adset-level
       for (const a of adsetInsights) {
-        const atc = getActionValue(a.actions, 'add_to_cart');
-        const ic = getActionValue(a.actions, 'initiate_checkout');
-        const purchases = getActionValue(a.actions, 'purchase');
-        const purchaseValue = getActionValue(a.actions, 'purchase_value');
         const impressions = parseInt(a.impressions || 0);
         const spend = parseFloat(a.spend || 0);
         const inline_link_clicks = parseInt(a.inline_link_clicks || 0);
+
+        
+        const purchaseTypes = [
+          'omni_purchase',
+          'purchase',
+          'offsite_conversion.fb_pixel_purchase',
+          'onsite_web_purchase'
+        ];
+        const purchaseValueTypes = [
+          'omni_purchase',
+          'purchase',
+          'offsite_conversion.fb_pixel_purchase_value',
+          'onsite_web_purchase_value'
+        ];
+
+        const purchases = getActionCountCombined(a.actions, purchaseTypes);
+        const purchaseValue = getActionValueCombined(a.action_values, purchaseValueTypes);
 
         adSetsArr.push({
           adset_id: a.adset_id,
@@ -161,15 +287,26 @@ async function pullMetaInsights() {
 
       // Ad-level
       for (const ad of adInsights) {
-        const lpv = getActionValue(ad.actions, 'landing_page_view');
-        const atc = getActionValue(ad.actions, 'add_to_cart');
-        const ic = getActionValue(ad.actions, 'initiate_checkout');
-        const purchases = getActionValue(ad.actions, 'purchase');
-        const purchaseValue = getActionValue(ad.actions, 'purchase_value');
         const impressions = parseInt(ad.impressions || 0);
         const ctr = parseFloat(ad.ctr || 0);
         const spend = parseFloat(ad.spend || 0);
         const inline_link_clicks = parseInt(ad.inline_link_clicks || 0);
+        
+        const purchaseTypes = [
+          'omni_purchase',
+          'purchase',
+          'offsite_conversion.fb_pixel_purchase',
+          'onsite_web_purchase'
+        ];
+        const purchaseValueTypes = [
+          'omni_purchase',
+          'purchase',
+          'offsite_conversion.fb_pixel_purchase_value',
+          'onsite_web_purchase_value'
+        ];
+
+        const purchases = getActionCountCombined(ad.actions, purchaseTypes);
+        const purchaseValue = getActionValueCombined(ad.action_values, purchaseValueTypes);
 
         adsArr.push({
           ad_id: ad.ad_id,

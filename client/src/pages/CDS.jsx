@@ -1,8 +1,7 @@
-import AnalyticsCard from '../components/AnalyticsCard'
-import GraphSection from '../components/Graph'
-
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from "react";
+import AnalyticsCard from "../components/AnalyticsCard";
+import GraphSection from "../components/Graph1";
+import { useParams, useNavigate } from "react-router-dom";
 
 const CARD_WIDTH = 500;
 const CARD_HEIGHT = 340;
@@ -12,9 +11,9 @@ const ClientDetails = () => {
   const [history, setHistory] = useState([]);
   const [selectedCard, setSelectedCard] = useState(0);
   const [clients, setClients] = useState([]);
+  const [availableWeeks, setAvailableWeeks] = useState([]);
   const navigate = useNavigate();
 
-  // Helper to format numeric ISO key (YYYYWW -> "YYYY-WW")
   function formatIsoKeyLabel(key) {
     if (!key) return "";
     const k = Number(key);
@@ -26,17 +25,35 @@ const ClientDetails = () => {
   // Fetch all clients for the category
   useEffect(() => {
     async function fetchClients() {
-      const res = await fetch(`/api/clients/client-level-cards?category=${category}&week=1`);
-      const data = await res.json();
-      setClients(Array.isArray(data) ? data.map(d => d.client) : []);
+      // get latest ISO week for category then fetch clients
+      try {
+        const weeksRes = await fetch(
+          `/api/clients/available-weeks?category=${category}`
+        );
+        const weeks = await weeksRes.json();
+        setAvailableWeeks(weeks || []);
+        const latest =
+          Array.isArray(weeks) && weeks.length > 0
+            ? weeks[weeks.length - 1]
+            : null;
+        const res = await fetch(
+          `/api/clients/client-level-cards?category=${category}&week=${latest}`
+        );
+        const data = await res.json();
+        setClients(Array.isArray(data) ? data.map((d) => d.client) : []);
+      } catch (err) {
+        setClients([]);
+      }
     }
-    fetchClients();
+    if (category) fetchClients();
   }, [category]);
 
   // Fetch metric history for the selected client
   useEffect(() => {
     async function fetchHistory() {
-      const res = await fetch(`/api/clients/client-metric-history?clientId=${clientId}&category=${category}`);
+      const res = await fetch(
+        `/api/clients/client-metric-history?clientId=${clientId}&category=${category}`
+      );
       const data = await res.json();
       setHistory(data);
     }
@@ -47,9 +64,10 @@ const ClientDetails = () => {
     return <div className="text-gray-400">Loading client data...</div>;
   }
 
-  const metricsFields = category === "LEADS"
-    ? ["bb", "cpm", "ctra", "ctrl", "leads", "cpl"]
-    : ["bb", "cpm", "ctra", "ctrl", "catc", "cgb", "cpa", "roas", "aov"];
+  const metricsFields =
+    category === "LEADS"
+      ? ["bb", "cpm", "ctra", "ctrl", "leads", "cpl"]
+      : ["bb", "cpm", "ctra", "ctrl", "catc", "cgb", "cpa", "roas", "aov"];
 
   // Helper for percent change
   function formatPercentChange(current, previous) {
@@ -64,7 +82,7 @@ const ClientDetails = () => {
     return (rounded > 0 ? "+" : "") + rounded + "%";
   }
 
-  // Build cardsData with percent change (keep logic) but format title using ISO week
+  // Build cardsData with percent change
   const cardsData = history.map((weekObj, idx) => {
     const prevWeekObj = history[idx + 1];
     const metrics = metricsFields.reduce((acc, key) => {
@@ -72,26 +90,22 @@ const ClientDetails = () => {
       const previousValue = prevWeekObj ? prevWeekObj[key] : null;
       acc[key] = {
         value: currentValue,
-        change: formatPercentChange(currentValue, previousValue)
+        change: formatPercentChange(currentValue, previousValue),
       };
       return acc;
     }, {});
     return {
       id: idx,
-      title: formatIsoKeyLabel(weekObj.week), // use ISO label
+      title: `Week ${weekObj.week}`,
       metrics,
       summary: weekObj.summary,
-      summaryStatus: weekObj.summaryStatus
+      summaryStatus: weekObj.summaryStatus,
     };
   });
 
-  // Build graphData: include week key per point (not just index)
-  const graphData = metricsFields.map(key => ({
+  const graphData = metricsFields.map((key) => ({
     name: key.toUpperCase(),
-    data: history.slice().reverse().map(weekObj => ({
-      week: weekObj.week,
-      value: Number(weekObj[key]) || 0
-    }))
+    data: history.slice().reverse().map((weekObj) => Number(weekObj[key]) || 0),
   }));
 
   // Handler for client selection
@@ -113,18 +127,27 @@ const ClientDetails = () => {
             onChange={handleClientChange}
             className="bg-[#1a1d24] text-white px-3 py-2 rounded min-w-[200px]"
           >
-            {clients.map(client => (
+            {clients.map((client) => (
               <option key={client.id} value={client.id}>
                 {client.AdAccountName}
               </option>
             ))}
           </select>
         </div>
+        {/* Optional: show selected week label */}
+        <div className="mb-4">
+          Week:{" "}
+          {availableWeeks.length
+            ? formatIsoKeyLabel(
+                availableWeeks[availableWeeks.length - 1]
+              )
+            : "N/A"}
+        </div>
         {/* Sleek grid layout: left = card, right = graphs */}
         <div
           className="grid gap-8 w-full"
           style={{
-            gridTemplateColumns: `${CARD_WIDTH}px 1fr`
+            gridTemplateColumns: `${CARD_WIDTH}px 1fr`,
           }}
         >
           <div className="flex flex-col gap-6 w-full">
@@ -137,7 +160,7 @@ const ClientDetails = () => {
                   width: CARD_WIDTH,
                   height: CARD_HEIGHT,
                   background: "transparent",
-                  cursor: "pointer"
+                  cursor: "pointer",
                 }}
                 onClick={() => setSelectedCard(idx)}
               >

@@ -10,24 +10,32 @@ const ClientLevel = ({ category }) => {
   const [weeksLoaded, setWeeksLoaded] = useState(false);
   const navigate = useNavigate();
 
+  function formatIsoKeyLabel(key) {
+    if (!key) return "";
+    const k = Number(key);
+    const year = Math.floor(k / 100);
+    const week = k % 100;
+    return `${year}-W${String(week).padStart(2, "0")}`;
+  }
+
   // Fetch available weeks when category changes
   useEffect(() => {
     async function fetchWeeksAndSet() {
-      setWeeksLoaded(false); // reset flag while fetching
+      setWeeksLoaded(false);
       try {
         const res = await fetch(`/api/clients/available-weeks?category=${category}`);
         const data = await res.json();
 
         if (Array.isArray(data) && data.length > 0) {
           setWeekOptions(data);
-          setSelectedWeek(data[data.length - 1]); // always latest
+          setSelectedWeek(data[data.length - 1]); // latest ISO key
         } else {
-          setWeekOptions([1]);
-          setSelectedWeek(1);
+          setWeekOptions([]);
+          setSelectedWeek(null);
         }
       } catch {
-        setWeekOptions([1]);
-        setSelectedWeek(1);
+        setWeekOptions([]);
+        setSelectedWeek(null);
       } finally {
         setWeeksLoaded(true);
       }
@@ -54,14 +62,14 @@ const ClientLevel = ({ category }) => {
       <div className="mb-6 flex gap-4 items-center">
         <span className="font-bold text-lg">Select Week:</span>
         <select
-          value={selectedWeek || ""}
+          value={selectedWeek ?? ""}
           onChange={(e) => setSelectedWeek(Number(e.target.value))}
           className="bg-[#1a1d24] text-white px-3 py-2 rounded"
-          disabled={!weeksLoaded}
+          disabled={!weeksLoaded || weekOptions.length === 0}
         >
           {weekOptions.map((week) => (
             <option key={week} value={week}>
-              Week {week}
+              {formatIsoKeyLabel(week)}
             </option>
           ))}
         </select>
