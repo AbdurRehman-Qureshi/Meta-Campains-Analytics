@@ -1,6 +1,6 @@
 import React from "react";
 
-const AnalyticsCard = ({ title, metrics, summary, category, width = 450, height = 350 }) => {
+const AnalyticsCard = ({ title, metrics, summary, category, width, height}) => {
   const metricLabels = category === "LEADS"
     ? [
         { key: "bb", label: "BB" },
@@ -35,28 +35,29 @@ const AnalyticsCard = ({ title, metrics, summary, category, width = 450, height 
         maxHeight: height,
         color: "#f2f2f2",
         fontFamily: "Inter, sans-serif",
-        padding: "0px 0px",
+        padding: "25px 19px",
         boxSizing: "border-box",
+        border_radius: "20px",
       }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-lg font-bold" style={{ color: "#f2f2f2" }}>
+        <span className="text-sm font-bold" style={{ color: "#f2f2f2" }}>
           {title}
         </span>
       </div>
 
       {/* Metrics Row */}
-      <div className="flex flex-row items-center justify-between w-full mb-4">
+      <div className="flex flex-row items-center justify-start w-full mb-4">
         {metricLabels.map((metric) => (
           <div
             key={metric.key}
-            className="flex flex-col "
-            style={{ minWidth: "52px" }}
+            className="flex flex-col items-center justify-center"
+            style={{ width: "100%" }}
           >
-            <span className="text-[12px] text-[#f2f2f2] font-sm mb-2">{metric.label}</span>
+            <span className="text-[10px] text-[#f2f2f2] font-sm mb-2">{metric.label}</span>
             <span
-              className="font-sm text-[12px]"
+              className="font-bold text-[10.5px]"
               style={{
                 color:
                   metric.key === "bb" || metric.key === "leads"
@@ -86,8 +87,9 @@ const AnalyticsCard = ({ title, metrics, summary, category, width = 450, height 
       </div>
 
       {/* General Update Section */}
+      <span className="font-semibold text-[11.5px] text-[#d4ac68]">General update:</span>
       <div
-        className="flex-1 overflow-y-auto mt-2 hide-scrollbar"
+        className="flex-1 overflow-y-auto mt-1 hide-scrollbar"
         style={{
           maxHeight: "180px",
           scrollbarWidth: "thin",
@@ -95,14 +97,13 @@ const AnalyticsCard = ({ title, metrics, summary, category, width = 450, height 
         }}
       >
         <div
-          className="text-sm leading-relaxed pr-3"
+          className="text-[11.5px] leading-relaxed pr-3"
           style={{
             color: "#f2f2f2",
             fontWeight: 400,
             fontFamily: "Inter, sans-serif",
           }}
         >
-          <span className="font-semibold text-[#d4ac68]">General update:</span>
           <div
             style={{
               marginTop: "8px",

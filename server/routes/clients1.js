@@ -45,13 +45,13 @@ function formatPercentChange(current, previous) {
   const rawChange = ((current - previous) / Math.abs(previous)) * 100;
   if (isNaN(rawChange)) return "N/A";
 
-  const neutralThreshold = 15; // ±15% = Neutral zone
+  const rounded = Math.round(rawChange);
 
-  if (Math.abs(rawChange) <= neutralThreshold) {
-    return "15%";
+  // Show the real value if between -15% and +15%
+  if (rounded >= -15 && rounded <= 15) {
+    return (rounded > 0 ? "+" : "") + rounded + "%";
   }
 
-  const rounded = Math.round(rawChange);
   return (rounded > 0 ? "+" : "") + rounded + "%";
 }
 

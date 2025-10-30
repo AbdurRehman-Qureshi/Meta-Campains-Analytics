@@ -26,7 +26,7 @@ const Sidebar = ({ isOpen, setIsOpen, setCategory }) => {
       )}
 
       <aside
-        className={`fixed md:static top-0 left-0 h-screen w-64 bg-[#1a1d24] text-white p-5 z-50 transform transition-transform duration-300 
+        className={`fixed md:static top-0 left-0 h-screen w-55 bg-[#1a1d24] text-white p-5 z-50 transform transition-transform duration-300 
         ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         {/* Sidebar Header */}

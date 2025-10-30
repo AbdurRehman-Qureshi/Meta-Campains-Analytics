@@ -1,6 +1,7 @@
 const pullMetaInsights = require("./metaInsightsPuller");
 const prisma = require("../config/prismaClient").default;
 
+// let testPullCounter = 0; 
 // --- ISO week helpers ---
 function getISOWeek(date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -10,19 +11,18 @@ function getISOWeek(date) {
   const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   return { year: d.getUTCFullYear(), week: weekNo };
 }
-function getISOWeekKey(date = new Date()) {
+function getISOWeekKey(date = new Date()) { // Production mode
   const { year, week } = getISOWeek(new Date(date));
   return year * 100 + week; // e.g. 202542
 }
-function previousISOWeekKey(isoKey) {
-  const year = Math.floor(isoKey / 100);
-  const week = isoKey % 100;
-  if (week > 1) return year * 100 + (week - 1);
-  // roll back to last ISO week of previous year
-  const dec31 = new Date(Date.UTC(year - 1, 11, 31));
-  const { year: y, week: w } = getISOWeek(dec31);
-  return y * 100 + w;
-}
+// function getISOWeekKey(date = new Date()) {
+//   const { year, week } = getISOWeek(new Date(date));
+//   return Number(`${year}${String(week).padStart(2, "0")}${testPullCounter}`);
+//   // e.g. 2025431, 2025432, 2025433
+// }
+
+
+
 
 async function uploadMetaInsightsToDB() {
   try {
@@ -44,22 +44,33 @@ async function uploadMetaInsightsToDB() {
         });
 
         // Determine ISO week key for this pull
-        const isoKey = getISOWeekKey(); // based on current server time
+        // const isoKey = getISOWeekKey(); // based on current server time
 
         // Find last week for this client
         const lastMetric = await prisma.clientLevelMetric.findFirst({
           where: { clientId: createdClient.id },
           orderBy: { week: "desc" },
         });
+        let week;
+        const isoKey = getISOWeekKey();
+        
+        if (!lastMetric) {
+          week = isoKey; // first metric entry for this client
+        } else if (lastMetric) {
+          week = lastMetric ? lastMetric.week + 1 : 1; // new ISO week, insert new record
+        } else {
+          console.log(`Client ${createdClient.AdAccountId} already has metrics for week ${isoKey}, skipping.`);
+          continue; // skip duplicate week
+        }
 
         // Skip if we've already inserted metrics for this ISO week
-        if (lastMetric && lastMetric.week === isoKey) {
-          console.log(`Client ${createdClient.AdAccountId} already has metrics for week ${isoKey}, skipping.`);
-        } else {
+        // if (lastMetric ) {
+        //   console.log(`Client ${createdClient.AdAccountId} already has metrics for week , skipping.`);
+        // } else {
           const metric = await prisma.clientLevelMetric.create({
             data: {
               clientId: createdClient.id,
-              week: isoKey,
+              week: week,
               bb: client.spend,
               cpm: client.cpm,
               ctra: client.ctr_all,
@@ -97,7 +108,7 @@ async function uploadMetaInsightsToDB() {
               }
             },
           });
-        }
+        
       }
       console.log(`Inserted ${clientsArr.length} clients + metrics + summaries.`);
     } else {

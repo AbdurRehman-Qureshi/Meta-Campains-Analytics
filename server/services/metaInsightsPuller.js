@@ -26,8 +26,8 @@ async function pullMetaInsights() {
             access_token: process.env.ACCESS_TOKEN,
             // date_preset: 'maximum',
             time_range: JSON.stringify({
-              since: '2025-10-13',
-              until: '2025-10-19',
+              since: '2025-10-20',
+              until: '2025-10-26',
             }),
             level,
             fields,

@@ -12,7 +12,7 @@ app.use(require('cors')());
 
 
 
-uploadMetaInsightsToDB();
+// uploadMetaInsightsToDB();
 
 // metaInsightsPuller();  commenting it out to avoid double pulling
 // uploadMetaInsightsToDB();
@@ -23,7 +23,7 @@ uploadMetaInsightsToDB();
 // pullMondayBoardData(process.env.BOARD_ID);
 
 
- const clientsRouter = require('./routes/clients');
+ const clientsRouter = require('./routes/clients1');
 app.use('/api/clients', clientsRouter);
 const server = app.listen(5000, () => console.log('Server running on port 5000'));
 
