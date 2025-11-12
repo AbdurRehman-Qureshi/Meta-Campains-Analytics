@@ -26,8 +26,8 @@ async function pullMetaInsights() {
             access_token: process.env.ACCESS_TOKEN,
             // date_preset: 'maximum',
             time_range: JSON.stringify({
-              since: '2025-10-20',
-              until: '2025-10-26',
+              since: '2025-10-27',
+              until: '2025-11-02',
             }),
             level,
             fields,
@@ -120,9 +120,9 @@ async function pullMetaInsights() {
       const [accountInsights, campaignInsights, adsetInsights, adInsights] =
         await Promise.all([
           fetchInsights(adAccountId, 'account', 'account_id,account_name,spend,impressions,ctr,actions,action_values,inline_link_clicks'),
-          fetchInsights(adAccountId, 'campaign', 'account_id,campaign_id,campaign_name,spend,impressions,ctr,actions,purchase_roas,reach'),
-          fetchInsights(adAccountId, 'adset', 'campaign_id,adset_id,adset_name,impressions,reach,frequency,ctr,actions,spend,clicks,inline_link_clicks'),
-          fetchInsights(adAccountId, 'ad', 'campaign_id,adset_id,ad_id,ad_name,impressions,ctr,actions,spend,inline_link_clicks'),
+          // fetchInsights(adAccountId, 'campaign', 'account_id,campaign_id,campaign_name,spend,impressions,ctr,actions,purchase_roas,reach'),
+          // fetchInsights(adAccountId, 'adset', 'campaign_id,adset_id,adset_name,impressions,reach,frequency,ctr,actions,spend,clicks,inline_link_clicks'),
+          // fetchInsights(adAccountId, 'ad', 'campaign_id,adset_id,ad_id,ad_name,impressions,ctr,actions,spend,inline_link_clicks'),
         ]);
 
       //       // 👇 Log to inspect data from Meta

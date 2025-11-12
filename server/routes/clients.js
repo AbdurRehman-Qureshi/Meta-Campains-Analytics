@@ -2,6 +2,21 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../config/prismaClient').default;
 
+// --- ISO helpers (server-side) ---
+function getISOPrevKey(key) {
+  const year = Math.floor(key / 100);
+  const week = key % 100;
+  if (week > 1) return year * 100 + (week - 1);
+  // previous year's last ISO week
+  const dec31 = new Date(Date.UTC(year - 1, 11, 31));
+  const d = new Date(Date.UTC(dec31.getUTCFullYear(), dec31.getUTCMonth(), dec31.getUTCDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return d.getUTCFullYear() * 100 + weekNo;
+}
+
 // -----------------------------
 // Helper: Get metric fields by category
 // -----------------------------
@@ -30,43 +45,44 @@ function formatPercentChange(current, previous) {
   const rawChange = ((current - previous) / Math.abs(previous)) * 100;
   if (isNaN(rawChange)) return "N/A";
 
-  const neutralThreshold = 15; // ±15% = Neutral zone
+  const rounded = Math.round(rawChange);
 
-  if (Math.abs(rawChange) <= neutralThreshold) {
-    return "15%";
+  // Show the real value if between -15% and +15%
+  if (rounded >= -15 && rounded <= 15) {
+    return (rounded > 0 ? "+" : "") + rounded + "%";
   }
 
-  const rounded = Math.round(rawChange);
   return (rounded > 0 ? "+" : "") + rounded + "%";
 }
 
-
 // -----------------------------
-// Helper: Fetch metrics for current and previous week efficiently
+// Helper: Fetch metrics for current and previous ISO week efficiently
 // -----------------------------
 async function getMetricWithChange({ model, where, metricsFields, week }) {
+  // week is ISO key (YYYYWW)
+  const prevWeek = getISOPrevKey(Number(week));
+
   const metrics = await model.findMany({
-    where: { ...where, week: { in: [week, week - 1] } },
+    where: { ...where, week: { in: [Number(week), Number(prevWeek)] } },
     orderBy: { week: 'desc' },
     select: metricsFields.reduce((acc, f) => (acc[f] = true, acc), { week: true })
   });
 
-  const currentMetric = metrics.find(m => m.week === week);
-  const previousMetric = metrics.find(m => m.week === week - 1);
+  const currentMetric = metrics.find(m => m.week === Number(week));
+  const previousMetric = metrics.find(m => m.week === Number(prevWeek));
 
   const result = {};
   for (const field of metricsFields) {
     const currentValue = currentMetric ? currentMetric[field] : null;
     const previousValue = previousMetric ? previousMetric[field] : null;
 
-    // ✅ If field is 'bb' or 'leads', show raw value only
+    // If field is 'bb' or 'leads', show raw value only
     if (field === 'bb' || field === 'leads') {
       result[field] = {
         value: currentValue,
-        change: currentValue !== null ? currentValue : "N/A"
+        change: null
       };
     } else {
-      // Default: show percentage change
       result[field] = {
         value: currentValue,
         change: formatPercentChange(currentValue, previousValue)
@@ -75,7 +91,6 @@ async function getMetricWithChange({ model, where, metricsFields, week }) {
   }
   return result;
 }
-
 
 // -----------------------------
 // Helper: Fetch summary for campaign/adset entity
@@ -111,22 +126,21 @@ router.get('/available-weeks', async (req, res) => {
     const upperCategory = category.toUpperCase();
 
     let weeks = await prisma.clientLevelMetric.findMany({
-      where: { client: { category: upperCategory}},
+      where: { client: { category: upperCategory } },
       distinct: ['week'],
-      select: { week: true},
+      select: { week: true },
       orderBy: { week: 'asc' }
     });
 
-    // Return empty array if no weeks found
     if (!weeks || weeks.length === 0) {
       return res.json([]);
     }
 
+    // return numeric ISO keys (frontend will format)
     res.json(weeks.map(w => w.week));
   } catch (err) {
     console.error("Error in /available-weeks:", err.message);
     res.status(500).json({ error: "Database error. Please try again later." });
-
   }
 });
 

@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Sidebar from './components/Sidebar';
-// import ClientLevel from './pages/ClientsLevelScreen';
-// import ClientDetails from './pages/ClientDetailScreen';
-import ClientLevel from './pages/CLS1';
-import ClientDetails from './pages/CDS';
-import AddClient from './pages/AddClient';
+import ClientLevel from './pages/ClientLevelScreen';
+import ClientDetails from './pages/ClientDetailScreen';
+import AddClient from './pages/AddClientScreen';
 import './App.css'
 
 function App() {

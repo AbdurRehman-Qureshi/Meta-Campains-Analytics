@@ -43,7 +43,7 @@ const Sidebar = ({ isOpen, setIsOpen, setCategory }) => {
         {/* Navigation */}
         <nav className="space-y-6">
           {/* Top Section */}
-          <ul className="space-y-5">
+          {/* <ul className="space-y-5">
             <li className="group cursor-pointer flex items-center gap-8 text-lg font-semibold font-sans hover:text-green-400 transition-all duration-300">
               <FaTools className="group-hover:text-green-400 transition-colors duration-300" />
               <span className="group-hover:translate-x-1 transition-transform duration-300">
@@ -68,7 +68,7 @@ const Sidebar = ({ isOpen, setIsOpen, setCategory }) => {
                 Ads
               </span>
             </li>
-          </ul>
+          </ul> */}
 
           {/* Templates Section */}
           <ul className="space-y-5 pt-4">
@@ -76,7 +76,7 @@ const Sidebar = ({ isOpen, setIsOpen, setCategory }) => {
               className="group cursor-pointer flex items-center gap-4 text-xl font-bold font-sans text-white transition-all duration-300"
               onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
             >
-              <FaImage className="group-hover:text-green-400 transition-colors duration-300" />
+              <FaImage className="group-hover:text-[#d4ac68] transition-colors duration-300" />
               <span className="group-hover:translate-x-1 transition-transform duration-300">
                 Templates
               </span>
@@ -88,8 +88,8 @@ const Sidebar = ({ isOpen, setIsOpen, setCategory }) => {
             </li>
 
             {isTemplatesOpen && (
-              <ul className="pl-7 space-y-5">
-                <li className="group cursor-pointer flex items-center gap-4 text-lg font-medium hover:text-green-400 transition-all duration-300">
+              <ul className="pl-0 space-y-5">
+                {/* <li className="group cursor-pointer flex items-center gap-4 text-lg font-medium hover:text-green-400 transition-all duration-300">
                   <FaCog className="group-hover:text-green-400 transition-colors duration-300" />
                   <span className="group-hover:translate-x-1 transition-transform duration-300">
                     Client Pages Config
@@ -109,27 +109,27 @@ const Sidebar = ({ isOpen, setIsOpen, setCategory }) => {
                   >
                     Image Processor
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <button
-                    className="w-full text-left px-4 py-2 rounded bg-gray-700 text-gray-200 hover:bg-green-600 hover:text-white transition"
+                    className="w-full text-left px-2 py-2 rounded bg-gray-700 text-gray-200 hover:bg-[#d4ac68] hover:text-white transition"
                     onClick={() => {
                       setCategory("ECOMMERCE");
                       navigate("/client-level");
                     }}
                   >
-                    E-commerce Level
+                    E-commerce
                   </button>
                 </li>
                 <li>
                   <button
-                    className="w-full text-left px-4 py-2 rounded bg-gray-700 text-gray-200 hover:bg-green-600 hover:text-white transition"
+                    className="w-full text-left px-2 py-2 rounded bg-gray-700 text-gray-200 hover:bg-[#d4ac68] hover:text-white transition"
                     onClick={() => {
                       setCategory("LEADS");
                       navigate("/client-level");
                     }}
                   >
-                    Leads Level
+                    Leads
                   </button>
                 </li>
               </ul>
@@ -138,17 +138,17 @@ const Sidebar = ({ isOpen, setIsOpen, setCategory }) => {
 
           {/* Additional Navigation Links */}
           <div className="mt-auto">
-            <Link
+            {/* <Link
               to="/client-level"
               className={`block px-4 py-2 rounded text-white hover:bg-[#23262e] transition ${
                 location.pathname === "/client-level" ? "bg-[#23262e]" : ""
               }`}
             >
               Clients
-            </Link>
+            </Link> */}
             <Link
               to="/add-client"
-              className="mt-4 block px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition text-center"
+              className="mt-4 block px-4 py-2 rounded bg-[#0f1112] text-white font-semibold hover:bg-[#d4ac68] transition text-center"
             >
               + Add Client
             </Link>
