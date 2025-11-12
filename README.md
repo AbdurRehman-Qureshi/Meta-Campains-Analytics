@@ -1,2 +1,8 @@
-# Meta-Campains-Analytics
+# Meta Ads Campaign Analytics & ROI Optimization
 An internal tool that automatically retrieves data from the Meta Marketing API (Facebook and Instagram ads) and analyzes it for better understand the performance of our campaigns and detect trends and deviations early.
+
+I delivered a powerful Meta Ads Analytics platform designed to help my client manage and optimize multiple clients’ ad campaigns simultaneously. This client project tracks critical weekly performance metrics, including BB, CPM, CTR, CGB, CPA, ROAS, LEADS, CPL, and AOV, and provides AI-driven summaries that highlight key trends, opportunities, and actionable insights. The tool is connected with Monday.com logs, where clients can record every campaign change—like budget updates or targeting adjustments—which the AI uses to generate more accurate, metrics-inclusive summaries. With this platform, you can make data-driven decisions, optimize targeting, improve ROI, and scale campaigns efficiently.
+
+The system generates clear visual dashboards, charts, and reports, allowing clients to instantly understand ad performance without getting lost in raw data. Whether managing a single campaign or multiple clients, this tool simplifies monitoring, identifies top-performing ads, and uncovers areas for improvement. It’s perfect for businesses looking to maximize ad performance, save time, and boost revenue.
+
+By using this platform, You can confidently adjust strategies weekly, focus on high-impact campaigns, and achieve measurable growth. My solution brings automation, accuracy, and actionable insights to the table, making Meta ad management effortless and results-oriented.
